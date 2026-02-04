@@ -17,9 +17,8 @@ PRISMA_BASE_URL = "https://api.sg.prismacloud.io"
 END_POINT_ALERT = "alert"             # 알람 목록 엔드포인트
 END_POINT_POLICY = "alert/v1/policy"  # 정책 상세 정보 엔드포인트
 TEMPLATE_PATH = r"./cspm_template.docx" # 워드 보고서 양식 파일
-# 보안 장비나 프록시 환경에서 실행할 경우를 위한 설정
-PROXIES = {"http": "http://127.0.0.1:8080", "https": "http://127.0.0.1:8080"}
-# PROXIES = None
+# PROXIES = {"http": "http://127.0.0.1:8080", "https": "http://127.0.0.1:8080"}
+PROXIES = None
 
 TRANSLATOR = Translator()
 TRANSLATION_CACHE = {} # 동일한 문장의 반복 번역을 방지하여 속도를 높이는 캐시 딕셔너리
@@ -51,6 +50,10 @@ now = datetime.now()
 base_time = now.replace(hour=8, minute=0, second=0, microsecond=0)
 start_2 = (base_time - timedelta(days=1)).strftime("%Y-%m-%d %I:%M %p")
 end_2 = base_time.strftime("%Y-%m-%d %I:%M %p")
+
+# # 특정 날짜로 고정하고 싶을 때 주석 해제 후 사용
+# start_2 = "2026-02-03 08:00 AM"
+# end_2 = "2026-02-04 08:00 AM"
 
 ##################################################################################################################
 start = get_timestamp_ms(start_2)
@@ -84,10 +87,10 @@ timestamp = datetime.now().strftime('%Y%m%d %H%M%S')
 original_json_file = f"{timestamp}_original.json" # 원본 json 파일명
 policy_json_file = f"{timestamp}_policy.json" # 정책 메타데이터 json 파일명
 processed_json_file = f"{timestamp}_processed.json" # 가공 후 json 파일명
-out_path = f"{timestamp}_LG생활건강_클라우드 보안점검 일일 결과보고서.docx" # 최종 보고서 파일명
+out_path = f"{timestamp}_aaaa_클라우드 보안점검 일일 결과보고서.docx" # 최종 보고서 파일명
 ##################################################################################################################
 
-# [번역 함수] Google Translate API를 사용하여 텍스트 번역
+# 번역 함수 텍스트 번역
 def translate_text(text, target_lang='ko'):
     if not text:
         return ""
@@ -176,19 +179,19 @@ def process_alert_data(raw_json, policy_finding_map):
         }
     }
 
-    print("[*] 데이터 가공 및 번역 중... (캐시 사용)")
+    print("[*] 보고서 생성중... 잠시만 기다려주세요 ...")
     for item in raw_json:
-        # 1. 시간 포맷팅 (밀리초 -> 읽기 쉬운 날짜)
+        #  시간 포맷팅 (밀리초 -> 읽기 쉬운 날짜)
         dt = datetime.fromtimestamp(item['alertTime'] / 1000.0)
         item['alertTime_format'] = dt.strftime('%Y-%m-%d %H:%M:%S')
 
-        # 2. 정책 매핑 및 findingTypes 번역
+        #  텍스트 병합 및 주요 텍스트 번역 
         p_id = item.get('policyId')
         finding_types = policy_finding_map.get(p_id, [])
+        item['policy']['findingTypes'] = ", ".join(finding_types) if finding_types else "-"
         translated_types = [translate_cached(ft) for ft in finding_types]
-        item['policy']['findingTypes_2'] = ", ".join(translated_types) if translated_types else "-"
+        item['policy']['findingTypes_ko'] = ", ".join(translated_types) if translated_types else "-"
 
-        # 3. 주요 텍스트 번역 (정책명, 설명, 권고조치)
         item['policy']['name_ko'] = translate_cached(item['policy']['name'])
         item['policy']['description_ko'] = translate_cached(item['policy'].get('description', ''))
         item['policy']['recommendation_ko'] = translate_cached(item['policy'].get('recommendation', ''))
