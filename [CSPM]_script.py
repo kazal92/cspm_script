@@ -22,16 +22,6 @@ TEMPLATE_PATH = os.path.join(BASE_DIR, "[CSPM]_Template.docx") # 워드 보고�
 PROXIES = None
 
 TRANSLATOR = Translator()
-TRANSLATION_CACHE = {} # 동일한 문장의 반복 번역을 방지하여 속도를 높이는 캐시 딕셔너리
-
-def translate_cached(text, target_lang='ko'):
-    """번역 캐시를 확인하여 이미 번역된 문구는 바로 반환하고, 없으면 번역을 수행합니다."""
-    if not text or text == "-": return text
-    # 언더바(_)를 공백으로 변환하여 번역기 인식률을 높입니다.
-    clean_text = text.replace('_', ' ')
-    if clean_text not in TRANSLATION_CACHE:
-        TRANSLATION_CACHE[clean_text] = translate_text(clean_text, target_lang)
-    return TRANSLATION_CACHE[clean_text]
 
 def get_timestamp_ms(date_str):
     fmt = "%Y-%m-%d %I:%M %p" # 
@@ -98,14 +88,16 @@ out_path = os.path.join(output_dir, f"{timestamp}_LG생활건강_클라우드 �
 
 # 번역 함수 텍스트 번역
 def translate_text(text, target_lang='ko'):
-    if not text:
-        return ""
+    if not text or text == "-":
+        return text
+    # 언더바(_)를 공백으로 변환하여 번역기 인식률을 높입니다.
+    clean_text = text.replace('_', ' ')
     try:
-        result = TRANSLATOR.translate(text, dest=target_lang)
+        result = TRANSLATOR.translate(clean_text, dest=target_lang)
         return result.text
     except Exception as e:
         print(f"번역 에러: {e}")
-        return text # 에러 시 원문 반환
+        return clean_text # 에러 시 원문 반환
 
 def get_auth_token():
     """Prisma Cloud API 사용을 위한 JWT 인증 토큰을 발급받습니다."""
@@ -195,13 +187,13 @@ def process_alert_data(raw_json, policy_finding_map):
         #  텍스트 병합 및 주요 텍스트 번역 
         p_id = item.get('policyId')
         finding_types = policy_finding_map.get(p_id, [])
-        item['policy']['findingTypes'] = ", ".join(finding_types) if finding_types else "-"
-        translated_types = [translate_cached(ft) for ft in finding_types]
+        item['policy']['findingTypes'] = ", ".join([ft.lower() for ft in finding_types]) if finding_types else "-"
+        translated_types = [translate_text(ft) for ft in finding_types]
         item['policy']['findingTypes_ko'] = ", ".join(translated_types) if translated_types else "-"
 
-        item['policy']['name_ko'] = translate_cached(item['policy']['name'])
-        item['policy']['description_ko'] = translate_cached(item['policy'].get('description', ''))
-        item['policy']['recommendation_ko'] = translate_cached(item['policy'].get('recommendation', ''))
+        item['policy']['name_ko'] = translate_text(item['policy']['name'])
+        item['policy']['description_ko'] = translate_text(item['policy'].get('description', ''))
+        item['policy']['recommendation_ko'] = translate_text(item['policy'].get('recommendation', ''))
 
         # 리전 정보가 없는 경우 처리
         if not item['resource'].get('regionId'): item['resource']['regionId'] = "-"
