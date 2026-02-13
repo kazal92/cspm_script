@@ -83,7 +83,7 @@ timestamp = datetime.now().strftime('%Y%m%d %H%M%S')
 original_json_file = os.path.join(output_dir, f"{timestamp}_original.json") # 원본 json 파일명
 policy_json_file = os.path.join(output_dir, f"{timestamp}_policy.json") # 정책 메타데이터 json 파일명
 processed_json_file = os.path.join(output_dir, f"{timestamp}_processed.json") # 가공 후 json 파일명
-out_path = os.path.join(output_dir, f"{timestamp}_LG생활건강_클라우드 보안점검 일일 결과보고서.docx") # 최종 보고서 파일명
+out_path = os.path.join(output_dir, f"{timestamp}_ㅁㅁㅁ_클라우드 보안점검 일일 결과보고서.docx") # 최종 보고서 파일명
 ##################################################################################################################
 
 # 번역 함수 텍스트 번역
